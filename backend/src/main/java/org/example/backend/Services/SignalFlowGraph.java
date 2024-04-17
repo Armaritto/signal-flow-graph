@@ -215,9 +215,8 @@ public class SignalFlowGraph {
     private void findLoops(Node startNode, Node currentNode, Stack<Node> stack, List<List<Node>> allLoops) {
         for (Edge edge : currentNode.getEdges()) {
             Node nextNode = edge.getDestination();
-            if (nextNode == startNode && stack.size() >= 2) {
+            if (nextNode == startNode && !stack.isEmpty() && stack.firstElement().equals(startNode)) {
                 List<Node> loop = new ArrayList<>(stack);
-                loop.sort(Comparator.comparing(Node::getName));
                 if (!containsLoop(allLoops, loop)) {
                     allLoops.add(loop);
                 }
