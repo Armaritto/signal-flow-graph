@@ -30,12 +30,12 @@ public class SignalFlowGraph {
         return null;
     }
 
-    public double masonsGainFormula(String sourceName, String destName) {
+    public String masonsGainFormula(String sourceName, String destName) {
         List<List<Node>> allPaths = findAllPaths(sourceName, destName);
         List<Double> forwardPathsGain = new ArrayList<>();
         List<List<Node>> allLoops = findAllLoops();
         List<Double> allLoopsGain = new ArrayList<>();
-        List<int[]> nonTouchingLoops = findNonTouchingLoops();
+        List<List<Integer>> nonTouchingLoops = findNonTouchingLoops();
         List<Double> nonTouchingLoopsGain = new ArrayList<>();
         // Calculate total forward path gain
         for (List<Node> path : allPaths) {
@@ -49,9 +49,9 @@ public class SignalFlowGraph {
         }
 
         // Print all lists
-        System.out.println("All Paths:");
-        int i = 0;
         StringBuilder forwardPathString = new StringBuilder();
+        forwardPathString.append("All Paths:").append("\n");
+        int i = 0;
         for (List<Node> path : allPaths) {
             forwardPathString.append(pathToString(path));
             forwardPathString.append(", Gain = ").append(forwardPathsGain.get(i));
@@ -61,9 +61,9 @@ public class SignalFlowGraph {
         System.out.println(forwardPathString);
 
         // Print all loops
-        System.out.println("All Loops:");
-        i=0;
         StringBuilder allLoopsString = new StringBuilder();
+        allLoopsString.append("All Loops:").append("\n");
+        i=0;
         for(List<Node> loop : allLoops){
             loopsGain.put(i, allLoopsGain.get(i));
             allLoopsString.append("Loop ").append(i + 1).append(": ");
@@ -75,10 +75,25 @@ public class SignalFlowGraph {
         System.out.println(allLoopsString);
 
         //Print all non-touching loops
-        System.out.println("All Non-Touching Loops:");
         StringBuilder nonTouchingLoopString = new StringBuilder();
-        for(int[] nonTouchingLoop : nonTouchingLoops){
-            nonTouchingLoopString.append("Loop ").append(nonTouchingLoop[0] + 1).append(" and Loop ").append(nonTouchingLoop[1] + 1).append(" Gain = ").append(allLoopsGain.get(nonTouchingLoop[0]) * allLoopsGain.get(nonTouchingLoop[1])).append("\n");
+        nonTouchingLoopString.append("All Non-Touching Loops:").append("\n");
+        for(List<Integer> nonTouchingLoop : nonTouchingLoops){
+            for(Integer loopIndex : nonTouchingLoop){
+                nonTouchingLoopString.append("Loop ").append(loopIndex + 1);
+                if(!loopIndex.equals(nonTouchingLoop.get(nonTouchingLoop.size() - 1))){
+                    nonTouchingLoopString.append(" and ");
+                }
+                else
+                    nonTouchingLoopString.append(" :");
+            }
+            //gain of non-touching loops
+            nonTouchingLoopString.append(" Gain = ");
+            double gain = 1.0;
+            for(Integer loopIndex : nonTouchingLoop){
+                gain *= allLoopsGain.get(loopIndex);
+            }
+            nonTouchingLoopString.append(gain);
+            nonTouchingLoopString.append("\n");
         }
         System.out.println(nonTouchingLoopString);
 
@@ -105,7 +120,11 @@ public class SignalFlowGraph {
             TF += forwardPathsGain.get(j) * deltaIList.get(j);
         }
         TF /= delta;
-        return TF;
+        StringBuilder TFString = new StringBuilder();
+        TFString.append("Transfer Function = ").append(TF);
+        StringBuilder result = new StringBuilder();
+        result.append(forwardPathString).append("\n").append(allLoopsString).append("\n").append(nonTouchingLoopString).append("\n").append(deltaString).append("\n").append(deltaIString).append("\n").append(TFString);
+        return result.toString();
     }
 
     private String pathToString(List<Node> path) {
@@ -236,17 +255,38 @@ public class SignalFlowGraph {
         }
         return false;
     }
-    public List<int[]> findNonTouchingLoops() {
-        List<int[]> nonTouchingLoops = new ArrayList<>();
+    public List<List<Integer>> findNonTouchingLoops() {
         List<List<Node>> allLoops = findAllLoops();
-        for (int i = 0; i < allLoops.size(); i++) {
-            for (int j = i + 1; j < allLoops.size(); j++) {
-                if (!isTouching(allLoops.get(i), allLoops.get(j))) {
-                    nonTouchingLoops.add(new int[]{i, j});
+        List<List<Integer>> nonTouchingLoops = new ArrayList<>();
+        for (int i = 2; i <= allLoops.size(); i++) {
+            findNonTouchingLoopsHelper(allLoops, new ArrayList<>(), nonTouchingLoops, 0, i);
+        }
+        return nonTouchingLoops;
+    }
+
+    private void findNonTouchingLoopsHelper(List<List<Node>> allLoops, List<Integer> current, List<List<Integer>> result, int start, int n) {
+        if (n == 0) {
+            if (isNonTouching(allLoops, current)) {
+                result.add(new ArrayList<>(current));
+            }
+            return;
+        }
+        for (int i = start; i <= allLoops.size() - n; i++) {
+            current.add(i);
+            findNonTouchingLoopsHelper(allLoops, current, result, i + 1, n - 1);
+            current.remove(current.size() - 1);
+        }
+    }
+
+    private boolean isNonTouching(List<List<Node>> allLoops, List<Integer> indices) {
+        for (int i = 0; i < indices.size(); i++) {
+            for (int j = i + 1; j < indices.size(); j++) {
+                if (isTouching(allLoops.get(indices.get(i)), allLoops.get(indices.get(j)))) {
+                    return false;
                 }
             }
         }
-        return nonTouchingLoops;
+        return true;
     }
     private boolean isTouching(List<Node> loop1, List<Node> loop2) {
         for (Node node : loop1) {
@@ -256,25 +296,34 @@ public class SignalFlowGraph {
         }
         return false;
     }
-    public Double getDelta(List<int[]> nonTouchingLoops){
+    public Double getDelta(List<List<Integer>> nonTouchingLoops){
         double delta = 1.0;
         for(int i=0;loopsGain.containsKey(i);i++){
             delta -= loopsGain.get(i);
         }
-        for(int[] nonTouchingLoop : nonTouchingLoops){
-            delta += loopsGain.get(nonTouchingLoop[0]) * loopsGain.get(nonTouchingLoop[1]);
+        for(List<Integer> nonTouchingLoop : nonTouchingLoops){
+            delta += loopsGain.get(nonTouchingLoop.get(0)) * loopsGain.get(nonTouchingLoop.get(1));
         }
         return delta;
     }
-    public Double getDeltaI(List<int[]> nonTouchingLoops, List<Node> path, List<List<Node>> allLoops){
+    public Double getDeltaI(List<List<Integer>> nonTouchingLoops, List<Node> path, List<List<Node>> allLoops){
         double delta = 1.0;
         for(int i=0;loopsGain.containsKey(i);i++){
             if(!isTouching(path, allLoops.get(i)))
                 delta -= loopsGain.get(i);
         }
-        for(int[] nonTouchingLoop : nonTouchingLoops){
-            if(!isTouching(path, allLoops.get(nonTouchingLoop[0])) && !isTouching(path, allLoops.get(nonTouchingLoop[1]))) ///will be updated when n non-touching loops are implemented
-                delta += loopsGain.get(nonTouchingLoop[0]) * loopsGain.get(nonTouchingLoop[1]);
+        for(List<Integer> nonTouchingLoop : nonTouchingLoops){
+            boolean isTouching = false;
+            double product = 1.0;
+            for(Integer loopIndex : nonTouchingLoop){
+                if(isTouching(path, allLoops.get(loopIndex))){
+                    isTouching = true;
+                    break;
+                }
+                product *= loopsGain.get(loopIndex);
+            }
+            if(!isTouching)
+                delta += product;
         }
         return delta;
     }

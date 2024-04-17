@@ -14,7 +14,7 @@ import java.util.*;
 public class Control {
 
     @PostMapping(path = "/computeTransferFunction")
-    public double computeTransferFunction(@RequestBody double[][] matrix) {
+    public String computeTransferFunction(@RequestBody double[][] matrix) {
         SignalFlowGraph graph = createGraph(matrix);
         return graph.masonsGainFormula("Node1",("Node"+matrix.length));
     }
