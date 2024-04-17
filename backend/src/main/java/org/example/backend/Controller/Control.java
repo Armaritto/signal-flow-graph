@@ -2,7 +2,10 @@ package org.example.backend.Controller;
 import org.example.backend.Services.RouthArray;
 import org.example.backend.Services.SignalFlowGraph;
 import org.springframework.web.bind.annotation.*;
-
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.analysis.solvers.LaguerreSolver;
+import org.apache.commons.math3.analysis.solvers.PolynomialSolver;
+import org.apache.commons.math3.complex.Complex;
 import java.util.*;
 
 @RestController()
@@ -38,6 +41,8 @@ public class Control {
     @PostMapping(path = "/computeRouthArray")
     public RouthArray computeRouthArray(@RequestBody double[] coefficients) {
         RouthArray routhArray = new RouthArray();
-        return routhArray.isSystemStable(coefficients);
+        routhArray = routhArray.isSystemStable(coefficients);
+        System.out.println(routhArray.getRoots()[0].getImaginary());
+        return routhArray;
     }
 }

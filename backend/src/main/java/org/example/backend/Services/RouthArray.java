@@ -1,14 +1,21 @@
 package org.example.backend.Services;
 
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.analysis.solvers.LaguerreSolver;
+import org.apache.commons.math3.analysis.solvers.PolynomialSolver;
+import org.apache.commons.math3.complex.Complex;
+
 public class RouthArray {
     private String status ;
     private double[][] res ;
+    private Cmplx[] roots;
     public RouthArray(){
         status = "";
     }
-    public RouthArray(double[][]res , String status){
+    public RouthArray(double[][]res , String status, Cmplx[] roots){
         this.status = status;
         this.res = res ;
+        this.roots = roots;
     }
 
     public String getStatus() {
@@ -44,14 +51,14 @@ public class RouthArray {
     private  boolean hasADifferentOrAbsentCoefficient(double[] coefficient ){
         double sign = Math.signum(coefficient[0]) ;
         if(sign < 1e-10){
-            status += "unstable due to absence of coefficient \n";
+            status = "unstable due to absence of coefficient";
             return false ;
         }
         int len = coefficient.length; ;
         for(int i = 1 ; i < len ; i++ ){
             double coefSign = Math.signum(coefficient[i]) ;
             if(coefSign != sign){
-                status += "unstable due to change of signs  || absence of coefficient \n";
+                status = "unstable due to change of signs  || absence of coefficient";
                 return false ;
             }
 
@@ -93,14 +100,28 @@ public class RouthArray {
             this.status = "Unstable System due to duplicate of root on j-axis";
         return routhArray;
     }
+    public void reverse(double[] array) {
+        int start = 0;
+        int end = array.length - 1;
+        while (start < end) {
+            double temp = array[start];
+            array[start] = array[end];
+            array[end] = temp;
+            start++;
+            end--;
+        }
+    }
     public  RouthArray isSystemStable(double[] coefficients) {
+        double[] coef = coefficients.clone();
+        reverse(coef);
+        getRoots(coef);
         int n = coefficients.length;
         if(!hasADifferentOrAbsentCoefficient(coefficients) )
-            return new RouthArray(new double[n][(n+1)/2] , this.status) ;
+            return new RouthArray(new double[n][(n+1)/2] , this.status, this.roots) ;
 
         double[][] routhArray = computeRouthArray(coefficients);
         allSameSign(routhArray) ;
-        return new RouthArray(routhArray , this.status);
+        return new RouthArray(routhArray , this.status, this.roots);
     }
     private boolean checkEntireZeroRow(double[][] routh , int row){
         for(int i = 1 ; i < routh[0].length ; ++i){
@@ -136,4 +157,32 @@ public class RouthArray {
         System.out.println();
     }
 
+    public void setRoots(Cmplx[] roots) {
+        this.roots = roots;
+    }
+
+    public Cmplx[] getRoots() {
+        return roots;
+    }
+
+    private void getRoots(double[] coefficients){
+        PolynomialFunction polynomial = new PolynomialFunction(coefficients);
+        PolynomialSolver solver = new LaguerreSolver();
+        Complex[] rtsComplex = ((LaguerreSolver) solver).solveAllComplex(polynomial.getCoefficients(), 0.0);
+        Cmplx[] rtsCmplx = new Cmplx[rtsComplex.length];
+        System.out.println("Roots of the equation:");
+        for(int i = 0; i < rtsComplex.length; i++) {
+            Complex root = rtsComplex[i];
+            double realPart = Math.round(root.getReal() * 1e6) / 1e6; // Round to 6 decimal places
+            double imagPart = Math.round(root.getImaginary() * 1e6) / 1e6; // Round to 6 decimal places
+            rtsCmplx[i] = new Cmplx(realPart, imagPart);
+            if (imagPart == 0) {
+                System.out.println("Real root: " + realPart);
+            }
+            else {
+                System.out.println("Complex root: " + realPart + " + " + imagPart + "j");
+            }
+        }
+        this.roots = rtsCmplx;
+    }
 }
