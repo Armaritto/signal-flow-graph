@@ -17,55 +17,33 @@
       @linkAdded="linkAdded"
       @canvasClick="canvasClick"
       :height="800"/>
+
+    <TransferFunctionDisplay @close-display="showTransferFunctionDisplay = false" v-if="showTransferFunctionDisplay" :displayText="displayText"/>
   </div>
 </template>
 
 <script>
 import SimpleFlowchart from './components/SimpleFlowchart.vue'
+import TransferFunctionDisplay from './components/TransferFunctionDisplay.vue'
 
 export default {
   name: 'app',
   components: {
-    SimpleFlowchart
+    SimpleFlowchart,
+    TransferFunctionDisplay
   },
   data() {
     return {
+      displayText: 'This is a display text',
+      showTransferFunctionDisplay: false,
       scene: {
         centerX: 1024,
         centerY: 140,
         scale: 1,
-        nodes: [
-          {
-            id: 1,
-            x: -700,
-            y: -69,
-            type: 'Q',
-            label: '1',
-          },
-          {
-            id: 2,
-            x: -357,
-            y: 80,
-            type: 'M',
-            label: '2',
-          },
-          {
-            id: 3,
-            x: -557,
-            y: 80,
-            type: 'Q',
-            label: '3',
-          }
-        ],
-        links: [
-          {
-            id: 1,
-            from: 3, // node id the link start
-            to: 2,  // node id the link end
-            weight: 1,
-            
-          }
-        ]
+        nodes: [],
+    
+        links: [],
+        
       },
       newNodeType: 0,
       newNodeLabel: '',
@@ -91,7 +69,29 @@ export default {
         adjMatrix[links[i].from-1][links[i].to-1] = links[i].weight
       }
       
-    console.log('adjMatrix:', adjMatrix)
+    // console.log('adjMatrix:', adjMatrix)
+    // adjMatrix = JSON.stringify(adjMatrix)
+    // console.log('JSON format: \n', adjMatrix)
+
+      console.log('adjMatrix:', adjMatrix)
+      adjMatrix = JSON.stringify(adjMatrix)
+      const url = "http://localhost:8080/programming_assignment/computeTransferFunction?"
+          const params = {
+            
+          }
+          const query = new URLSearchParams(params)
+          const method = "POST"
+          const body = adjMatrix
+          
+          fetch(url+query, {
+            method: method,
+            body: body,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+    })
+          .then(res => res.text())
+          .then((data) => {this.displayText = data; this.showTransferFunctionDisplay = true ;console.log(data)})
     
   },
     canvasClick(e) {
