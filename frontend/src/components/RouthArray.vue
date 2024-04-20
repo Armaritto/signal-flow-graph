@@ -4,7 +4,7 @@
     <input type="number" v-model="degree" placeholder="eg. 5"/>
 
     <div v-for="(value, index) in Array(degree+1)" :key="index">
-      <label :for="'coefficient-' + index">X^{{ degree - index }}&nbsp;</label>
+      <label :for="'coefficient-' + index">S^{{ degree - index }}&nbsp;</label>
       <input type="number" v-model="coefficients[index]" :id="'coefficient-' + index" placeholder="Enter coefficient"/>
     </div>
     <button @click="computeRouth">Calculate</button>
@@ -13,7 +13,7 @@
       <h3>Computed Routh Array</h3>
       <table style="margin: auto; min-width: 350px">
         <tr v-for="(subArray, index) in ansArr.res" :key="index">
-          <td>X^{{ degree - index }}          </td>
+          <td>S^{{ degree - index }}          </td>
           <td v-for="(item, subIndex) in subArray" :key="subIndex">
             {{ item }}
           </td>
@@ -44,6 +44,16 @@ export default {
         status: ""
       },
       ansReceived: false
+    }
+  },
+  watch: {
+    degree(newVal) {
+      if (newVal < 0) {
+        this.degree = 0;
+      } else {
+        this.ansReceived = false;
+        this.coefficients = [];
+      }
     }
   },
   methods: {
@@ -88,10 +98,8 @@ export default {
   margin: 0;
   background: #dddddd;
   position: relative;
-  overflow: hidden;
-  svg {
-    cursor: grab;
-  }
+  overflow: auto;
+  align-content: center;
 }
 
 </style>

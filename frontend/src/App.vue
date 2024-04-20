@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h1> Signal Flow Graph & Routh Array Criterion</h1>
-    <button @click="showSignalFlowGraph = !showSignalFlowGraph">Switch to Routh Array/ Signal Flow</button>
+    <button @click="showSignalFlowGraph = !showSignalFlowGraph">Switch to Routh Array/ Signal Flow Graph</button>
     <h2 v-if="showSignalFlowGraph">Signal Flow Graph</h2>
     <h2 v-else>Routh Array</h2>
     <div class="tool-wrapper">
